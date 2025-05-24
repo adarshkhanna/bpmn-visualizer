@@ -1,0 +1,80 @@
+{{if .Error}}
+<div class="error-message">
+    <p><strong>Error:</strong> {{.Error}}</p>
+    <p>Please check the GCS URI and ensure the file exists and is accessible.</p>
+</div>
+{{else}}
+<div id="bpmn-viewer-container"></div> <!-- Ensure this ID is unique if index.html also has one -->
+<script>
+  (function() {
+    var bpmnXML = `{{.BPMNXMLDataJS}}`; // Injected by Go template
+
+    // Check if BpmnJS is available
+    if (typeof BpmnJS === 'undefined') {
+        console.error('BpmnJS is not loaded!');
+        var container = document.getElementById('bpmn-viewer-container');
+        if(container) {
+            container.innerHTML = '<p class="error-message">Critical Error: BpmnJS library not found. Please check browser console.</p>';
+        }
+        return;
+    }
+
+    var viewerContainer = document.getElementById('bpmn-viewer-container');
+    if (!viewerContainer) {
+        console.error('BPMN viewer container (bpmn-viewer-container) not found in the fragment.');
+        // Try to append error to diagram-output-area if main container is missing
+        var outputArea = document.getElementById('diagram-output-area');
+        if(outputArea){
+            var err = document.createElement('p');
+            err.className = 'error-message';
+            err.innerText = 'Error: Viewer container element is missing in the server response.';
+            outputArea.appendChild(err);
+        }
+        return;
+    }
+    
+    // Ensure the container is empty before initializing (prevents issues on re-renders)
+    while (viewerContainer.firstChild) {
+        viewerContainer.removeChild(viewerContainer.firstChild);
+    }
+
+    var bpmnViewer = new BpmnJS({
+      container: viewerContainer // Use the actual DOM element
+    });
+
+    async function importDiagram(xml) {
+      try {
+        // Check if XML is empty or placeholder, which might indicate an upstream issue not caught as an .Error
+        if (!xml || xml.trim() === "") {
+            console.error('Received empty BPMN XML data.');
+            viewerContainer.innerHTML = '<p class="error-message">Error: Received empty BPMN data from server.</p>';
+            return;
+        }
+        const result = await bpmnViewer.importXML(xml);
+        if (result && result.warnings && result.warnings.length) {
+            console.warn('BPMN import warnings:', result.warnings);
+            // Optionally display warnings to the user
+        }
+        bpmnViewer.get('canvas').zoom('fit-viewport');
+        console.log('BPMN diagram loaded successfully.');
+      } catch (err) {
+        console.error('Could not import BPMN 2.0 diagram:', err);
+        viewerContainer.innerHTML = '<p class="error-message">Error loading BPMN diagram: ' + err.message + '</p>' + 
+                                    '<p>Ensure the file is valid BPMN 2.0 XML.</p>' + 
+                                    '<details><summary>Received XML (first 500 chars)</summary><pre>' + 
+                                    xml.substring(0, 500).replace(/</g, "&lt;").replace(/>/g, "&gt;") + 
+                                    '...</pre></details>';
+      }
+    }
+
+    if (bpmnXML) {
+      importDiagram(bpmnXML);
+    } else {
+      // This case should ideally be handled by the {{if .Error}} block in Go template,
+      // but as a fallback for the script:
+      console.error('No BPMN XML data received from server (script check).');
+      viewerContainer.innerHTML = '<p class="error-message">Error: No BPMN XML data was provided to the viewer script.</p>';
+    }
+  })();
+</script>
+{{end}}

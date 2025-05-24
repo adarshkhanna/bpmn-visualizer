@@ -1,0 +1,127 @@
+/* General body styling - supplements/overrides index.html inline styles if needed */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    margin: 0;
+    padding: 0;
+    background-color: #f0f2f5;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 25px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    color: #1d3557; /* Dark blue */
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #495057;
+}
+
+input[type="text"] {
+    width: calc(100% - 24px); /* Account for padding and border */
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 1rem;
+    box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+}
+
+input[type="text"]:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+button {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    background-color: #007bff; /* Primary blue */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+    text-align: center;
+}
+
+button:hover {
+    background-color: #0056b3; /* Darker blue */
+}
+
+/* HTMX loading indicator styling */
+/* This class is added by HTMX to the element pointed to by hx-indicator attribute during a request */
+.htmx-indicator {
+    display: none; /* Hidden by default, shown by JS/HTMX attributes */
+    opacity: 0;
+    transition: opacity 0.3s ease-in;
+    font-style: italic;
+    color: #007bff;
+    margin-left: 10px;
+}
+
+.htmx-request .htmx-indicator, .htmx-request.htmx-indicator {
+    display: inline !important; /* Show it when request is active */
+    opacity: 1 !important;
+}
+
+
+#diagram-output-area {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+/* Styling for the BPMN viewer container itself (resides in bpmn_fragment.html) */
+#bpmn-viewer-container {
+    width: 100%;
+    height: 650px; /* Slightly increased height */
+    border: 1px solid #dee2e6; /* Subtler border */
+    background-color: #f8f9fa; /* Light background for the viewer */
+    border-radius: 4px;
+    overflow: hidden; /* Ensure contents don't spill out */
+}
+
+/* Error message styling (resides in bpmn_fragment.html) */
+.error-message {
+    padding: 15px;
+    margin-top: 15px;
+    border: 1px solid #f5c6cb; /* Bootstrap danger border color */
+    border-radius: 4px;
+    color: #721c24; /* Bootstrap danger text color */
+    background-color: #f8d7da; /* Bootstrap danger background color */
+}
+
+.error-message p {
+    margin: 0 0 5px 0;
+}
+.error-message p:last-child {
+    margin-bottom: 0;
+}
+
+/* Basic responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        margin: 20px;
+        padding: 20px;
+    }
+
+    input[type="text"], button {
+        font-size: 0.95rem;
+    }
+}

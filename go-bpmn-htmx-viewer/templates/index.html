@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go BPMN Viewer with HTMX</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- bpmn-js CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/bpmn-js@^17/dist/assets/diagram-js.css">
+    <link rel="stylesheet" href="https://unpkg.com/bpmn-js@^17/dist/assets/bpmn-font/css/bpmn.css">
+    <!-- Removed inline <style> block as styles are now in static/style.css -->
+</head>
+<body>
+    <div class="container">
+        <h1>BPMN Diagram Viewer</h1>
+        
+        <div>
+            <label for="gcs_uri_input">GCS URI of BPMN File:</label>
+            <input type.text" id="gcs_uri_input" name="gcs_uri" placeholder="gs://your-bucket-name/path/to/diagram.bpmn" value="gs://cloud-workstations-dev-craft-testing/example.bpmn">
+        </div>
+        
+        <button 
+            hx-post="/render-bpmn"
+            hx-include="#gcs_uri_input"
+            hx-target="#diagram-output-area"
+            hx-swap="innerHTML"
+            hx-indicator="#loading-spinner">
+            Render Diagram
+        </button>
+        <span id="loading-spinner" class="htmx-indicator">Loading...</span>
+
+        <div id="diagram-output-area">
+            <!-- BPMN diagram (or error message) will be loaded here by HTMX -->
+            <p>Enter a GCS URI and click "Render Diagram" to view a BPMN file.</p>
+        </div>
+    </div>
+
+    <!-- HTMX Library -->
+    <script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js"></script>
+    <!-- bpmn-js Library -->
+    <script src="https://unpkg.com/bpmn-js@^17/dist/bpmn-viewer.development.js"></script>
+
+    <script>
+        // Optional: client-side validation or interaction if needed
+        document.addEventListener('htmx:afterSwap', function(event) {
+            if (event.detail.target.id === 'diagram-output-area') {
+                // Check if a script tag was part of the swapped content
+                // and potentially execute it if HTMX doesn't handle it as expected
+                // (HTMX generally handles script tags in swapped content well)
+                console.log("HTMX content swapped into #diagram-output-area.");
+            }
+        });
+
+        // Hide loading spinner initially - HTMX will show it.
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const spinner = document.getElementById('loading-spinner');
+            if (spinner) {
+                spinner.style.display = 'none'; 
+            }
+        });
+        // Ensure HTMX shows the spinner during request by removing display:none if set by above
+        document.body.addEventListener('htmx:beforeRequest', function(evt) {
+            const spinner = document.getElementById('loading-spinner'); // or use evt.detail.indicator
+            if (spinner) {
+                spinner.style.display = 'inline'; 
+            }
+        });
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            const spinner = document.getElementById('loading-spinner'); // or use evt.detail.indicator
+            if (spinner) {
+                spinner.style.display = 'none';
+            }
+        });
+
+
+    </script>
+</body>
+</html>
