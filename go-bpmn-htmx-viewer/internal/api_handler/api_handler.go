@@ -1,7 +1,6 @@
 package api_handler
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -36,11 +35,14 @@ func CreateRenderBPMNHandler(templates *template.Template) http.HandlerFunc {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			// Consider a specific error status if HTMX can use it, but usually we send 200 with error in fragment
 			// w.WriteHeader(http.StatusBadRequest) 
-			err = templates.ExecuteTemplate(w, "bpmn_fragment.html", data)
-			if err != nil {
-				log.Printf("Error executing error template: %v", err)
-				// Avoid writing to w if headers already sent by ExecuteTemplate
-				// http.Error(w, "Server error", http.StatusInternalServerError) // Fallback
+			tmplErr := templates.ExecuteTemplate(w, "bpmn_fragment.html", data)
+			if tmplErr != nil {
+				log.Printf("Error executing template to show JSON decoding error: %v", tmplErr)
+				// Fallback if template execution itself fails for the error message
+				// Avoid writing to w if headers already sent by ExecuteTemplate, though for a critical error like this,
+				// it might be acceptable if the client gets a broken response.
+				// Consider checking response committed status if a more robust solution is needed.
+				// For now, just logging, as the original code also just logged.
 			}
 			return
 		}
@@ -50,14 +52,15 @@ func CreateRenderBPMNHandler(templates *template.Template) http.HandlerFunc {
 			data := BPMNTemplateData{Error: "GCS URI cannot be empty."}
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			// w.WriteHeader(http.StatusBadRequest)
-			err = templates.ExecuteTemplate(w, "bpmn_fragment.html", data)
-			if err != nil {
-				log.Printf("Error executing error template: %v", err)
+			tmplErr := templates.ExecuteTemplate(w, "bpmn_fragment.html", data)
+			if tmplErr != nil {
+				log.Printf("Error executing template to show GCS URI empty error: %v", tmplErr)
 			}
 			return
 		}
 
 		log.Printf("Received request for GCS URI: %s", reqPayload.GCSURI)
+		// Pass r.Context() for GCS operations that require it
 		bpmnXML, err := gcs_handler.FetchBPMNFromGCS(r.Context(), reqPayload.GCSURI)
 		
 		var data BPMNTemplateData
