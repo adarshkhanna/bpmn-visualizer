@@ -53,18 +53,82 @@
         const result = await bpmnViewer.importXML(xml);
         if (result && result.warnings && result.warnings.length) {
             console.warn('BPMN import warnings:', result.warnings);
-            // Optionally display warnings to the user
         }
         bpmnViewer.get('canvas').zoom('fit-viewport');
         console.log('BPMN diagram loaded successfully.');
+
+        // --- BEGIN DECISION VISUALIZER LOGIC ---
+        initializeInteractivity(bpmnViewer);
+        // --- END DECISION VISUALIZER LOGIC ---
+
       } catch (err) {
         console.error('Could not import BPMN 2.0 diagram:', err);
-        viewerContainer.innerHTML = '<p class="error-message">Error loading BPMN diagram: ' + err.message + '</p>' + 
-                                    '<p>Ensure the file is valid BPMN 2.0 XML.</p>' + 
-                                    '<details><summary>Received XML (first 500 chars)</summary><pre>' + 
-                                    xml.substring(0, 500).replace(/</g, "&lt;").replace(/>/g, "&gt;") + 
+        viewerContainer.innerHTML = '<p class="error-message">Error loading BPMN diagram: ' + err.message + '</p>' +
+                                    '<p>Ensure the file is valid BPMN 2.0 XML.</p>' +
+                                    '<details><summary>Received XML (first 500 chars)</summary><pre>' +
+                                    xml.substring(0, 500).replace(/</g, "&lt;").replace(/>/g, "&gt;") +
                                     '...</pre></details>';
       }
+    }
+
+    function initializeInteractivity(viewer) {
+        const eventBus = viewer.get('eventBus');
+        const canvas = viewer.get('canvas');
+        const elementRegistry = viewer.get('elementRegistry');
+        let highlightedElements = [];
+
+        // Function to clear existing highlights
+        function clearHighlights() {
+            highlightedElements.forEach(el => {
+                canvas.removeMarker(el.id, 'highlight');
+                if(el.type === 'bpmn:SequenceFlow') {
+                    // Manually reset stroke color for sequence flows if marker is not enough
+                    const gfx = elementRegistry.getGraphics(el.id);
+                    if(gfx) {
+                        gfx.style.stroke = '#000'; // Reset to default color
+                    }
+                }
+            });
+            highlightedElements = [];
+        }
+
+        // Function to highlight a path
+        function highlightPath(startElement) {
+            clearHighlights();
+
+            // Highlight the gateway itself
+            canvas.addMarker(startElement.id, 'highlight');
+            highlightedElements.push(startElement);
+
+            // If it's a gateway, highlight the first outgoing path
+            if (startElement.businessObject.outgoing && startElement.businessObject.outgoing.length > 0) {
+                const sequenceFlow = startElement.businessObject.outgoing[0]; // Take the first path
+                const sequenceFlowElement = elementRegistry.get(sequenceFlow.id);
+                if (sequenceFlowElement) {
+                    canvas.addMarker(sequenceFlow.id, 'highlight');
+                    highlightedElements.push(sequenceFlowElement);
+
+                    // Highlight the target of the sequence flow
+                    const targetElement = elementRegistry.get(sequenceFlow.targetRef.id);
+                    if (targetElement) {
+                        canvas.addMarker(targetElement.id, 'highlight');
+                        highlightedElements.push(targetElement);
+                    }
+                }
+            }
+        }
+
+        eventBus.on('element.click', function(event) {
+            const element = event.element;
+
+            // Only react to clicks on exclusive or inclusive gateways
+            if (element.type === 'bpmn:ExclusiveGateway' || element.type === 'bpmn:InclusiveGateway') {
+                console.log('Gateway clicked:', element);
+                highlightPath(element);
+            }
+        });
+
+        console.log('Decision visualizer interactivity initialized.');
     }
 
     if (bpmnXML) {

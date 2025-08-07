@@ -125,3 +125,9 @@ button:hover {
         font-size: 0.95rem;
     }
 }
+
+/* --- Highlighting for Decision Visualizer --- */
+.highlight .djs-visual > :nth-child(1) {
+  stroke: #228B22 !important; /* ForestGreen */
+  stroke-width: 2.5px !important;
+}
